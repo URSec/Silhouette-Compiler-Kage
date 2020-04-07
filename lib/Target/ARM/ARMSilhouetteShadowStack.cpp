@@ -38,7 +38,7 @@ static DebugLoc DL;
 static cl::opt<int>
 ShadowStackOffset("arm-silhouette-shadowstack-offset",
                   cl::desc("Silhouette shadow stack offset"),
-                  cl::init(14680064), cl::Hidden);
+                  cl::init(4092), cl::Hidden);
 
 ARMSilhouetteShadowStack::ARMSilhouetteShadowStack()
     : MachineFunctionPass(ID) {
@@ -287,9 +287,18 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
   }
   // Skip privileged functions in FreeRTOS
   if (MF.getFunction().getSection().equals("privileged_functions")){
-    errs() << "Privileged function! skipped\n";
+    errs() << "Privileged function: " << MF.getName() << "\n";
     return false;
   }
+
+  // Skip all HAL Library functions in FreeRTOS
+  if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("stm32l475_discovery") != std::string::npos){
+    if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("mcu_vendor") != std::string::npos){
+      errs() << "HAL Library Function: " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << " \n";
+      return false;
+    }
+  }
+  errs() << "Transforming " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << "\r\n";
 #endif
 
   // Warn if the function has variable-sized objects; we assume the program is

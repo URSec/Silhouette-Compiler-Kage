@@ -288,9 +288,18 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
   }
   // Skip privileged functions in FreeRTOS
   if (MF.getFunction().getSection().equals("privileged_functions")){
-    errs() << "Privileged function! skipped\n";
+    errs() << "Privileged function: " << MF.getName() << "\n";
     return false;
   }
+
+  // Skip all HAL Library functions in FreeRTOS
+  if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("stm32l475_discovery") != std::string::npos){
+    if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("mcu_vendor") != std::string::npos){
+      errs() << "HAL Library Function: " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << " \n";
+      return false;
+    }
+  }
+  errs() << "Transforming " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << "\r\n";
 #endif
 
   unsigned long OldCodeSize = getFunctionCodeSize(MF);
