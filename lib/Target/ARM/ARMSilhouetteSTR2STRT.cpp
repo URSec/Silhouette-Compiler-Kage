@@ -1640,7 +1640,7 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
   std::error_code EC;
   raw_fd_ostream MemStat("./code_size_sp.stat", EC,
                          sys::fs::OpenFlags::F_Append);
-  MemStat << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
+  MemStat << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << ":" << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
 
   return true;
 }

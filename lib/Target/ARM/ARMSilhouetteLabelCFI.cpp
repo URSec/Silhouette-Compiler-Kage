@@ -412,7 +412,7 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
   std::error_code EC;
   raw_fd_ostream MemStat("./code_size_cfi.stat", EC,
                          sys::fs::OpenFlags::F_Append);
-  MemStat << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
+  MemStat << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << ":" << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
 
   // Output jump table jump information
   raw_fd_ostream JTJStat("./jump_table_jump.stat", EC,
