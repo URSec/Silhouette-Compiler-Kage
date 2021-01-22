@@ -375,6 +375,14 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
           }
         }
         break;
+      
+      // Throw warning if an MSR instruction is present in untrusted code
+      case ARM::t2MSR_M:
+      // Also add MSR instructions of other ARM architectures here just in case
+      case ARM::t2MSR_AR:
+      case ARM::t2MSRbanked:
+        errs() << "WARNING: Illegal privileged instruction found in untrusted code \n";
+        break;
 
       default:
         break;
