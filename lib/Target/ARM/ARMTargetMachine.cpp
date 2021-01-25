@@ -19,6 +19,7 @@
 #include "ARMSilhouetteSFI.h"
 #include "ARMSilhouetteSTR2STRT.h"
 #include "ARMSilhouetteShadowStack.h"
+#include "ARMKageCodeScanner.h"
 #include "MCTargetDesc/ARMMCTargetDesc.h"
 #include "TargetInfo/ARMTargetInfo.h"
 #include "llvm/ADT/Optional.h"
@@ -118,6 +119,14 @@ EnableSilhouetteSFI("enable-arm-silhouette-sfi",
                     cl::values(clEnumValN(NoSFI, "none", "No SFI"),
                                clEnumValN(SelSFI, "selective", "Selective SFI"),
                                clEnumValN(FullSFI, "full", "Full SFI")));
+
+bool KageCodeScanner;
+static cl::opt<bool, true>
+EnableKageCodeScanner("enable-arm-kage-code-scanner",
+                       cl::desc("Enable Kage Code Scanner"),
+                       cl::location(KageCodeScanner),
+                       cl::init(false), cl::Hidden);
+
 
 // FIXME: Unify control over GlobalMerge.
 static cl::opt<cl::boolOrDefault>
@@ -601,6 +610,10 @@ void ARMPassConfig::addPreEmitPass() {
 
   if (EnableSilhouetteCFI) {
     addPass(createARMSilhouetteLabelCFI());
+  }
+
+  if (EnableKageCodeScanner) {
+    addPass(createARMKageCodeScanner());
   }
 
   addPass(createARMConstantIslandPass());

@@ -182,3 +182,41 @@ const static std::set<std::string> funcBlacklist {
     "SystemClock_Config",
     "MPU_Init",
 };
+
+// Kage: A set of Secure API functions 
+const static std::set<std::string> funcSecureAPI  {
+  // Tasks
+  "xTaskCreateRestricted",
+  "vTaskDelete",
+  "vTaskDelayUntil",
+  "vTaskDelay",
+  "vTaskPrioritySet"
+  "vTaskSuspend",
+  "vTaskResume",
+  "vTaskAllocateMPURegions",
+  "ulTaskNotifyTake",
+  "xTaskNotifyWait",
+  "xTaskGenericNotify",
+  "xTaskNotifyStateClear",
+  // Untrusted kernel
+  "vTaskMissedYield",
+  "xTaskPriorityInherit",
+  "xTaskPriorityDisinherit",
+  "xTaskPriorityDisinheritAfterTimeout",
+  "pvTaskIncrementMutexHeldCount",
+  "vTaskSuspendAll",
+  "xTaskResumeAll",
+  "vTaskPlaceOnEventList",
+  "vTaskPlaceOnEventListRestricted",
+  "vTaskPlaceOnUnorderedEventList",
+  "xTaskRemoveFromEventList",
+  "vTaskRemoveFromUnorderedEventList",
+  // ISR
+  "xTaskResumeFromISR",
+  "xTaskGenericNotifyFromISR",
+  "vTaskNotifyGiveFromISR",
+};
+
+// Kage: list of trusted kernel functions
+// generated at runtime by the shadow stack pass
+static std::set<std::string> kageInternalPrivFunc;

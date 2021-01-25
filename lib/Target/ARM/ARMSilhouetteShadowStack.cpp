@@ -289,6 +289,9 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
                           sys::fs::OpenFlags::F_Append);
     MemStat << MF.getName() << ":" << getFunctionCodeSize(MF) << "\n";
 
+    // Added the function to the trusted kernel function list
+    kageInternalPrivFunc.insert(MF.getName());
+
     return false;
   }
   // Skip privileged functions in FreeRTOS
@@ -299,6 +302,12 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
     raw_fd_ostream MemStat("./code_size_priv.stat", EC,
                           sys::fs::OpenFlags::F_Append);
     MemStat << MF.getName() << ":" << getFunctionCodeSize(MF) << "\n";
+
+    // If the function is not a secure API function, add it to trusted
+    // kernel function list
+    if (funcSecureAPI.find(MF.getName()) != funcSecureAPI.end()) {
+      kageInternalPrivFunc.insert(MF.getName());
+    }
 
     return false;
   }
@@ -312,6 +321,9 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
       raw_fd_ostream MemStat("./code_size_hal.stat", EC,
                             sys::fs::OpenFlags::F_Append);
       MemStat << MF.getName() << ":" << getFunctionCodeSize(MF) << "\n";
+
+      // Insert to trusted kernel function list
+      kageInternalPrivFunc.insert(MF.getName());
 
       return false;
     }
@@ -374,14 +386,6 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
             }
           }
         }
-        break;
-      
-      // Throw warning if an MSR instruction is present in untrusted code
-      case ARM::t2MSR_M:
-      // Also add MSR instructions of other ARM architectures here just in case
-      case ARM::t2MSR_AR:
-      case ARM::t2MSRbanked:
-        errs() << "WARNING: Illegal privileged instruction found in untrusted code \n";
         break;
 
       default:

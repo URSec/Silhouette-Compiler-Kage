@@ -36,6 +36,7 @@ add_llvm_target(ARMCodeGen
   ARMISelDAGToDAG.cpp
   ARMISelLowering.cpp
   ARMInstrInfo.cpp
+  ARMKageCodeScanner.cpp
   ARMLegalizerInfo.cpp
   ARMParallelDSP.cpp
   ARMLoadStoreOptimizer.cpp
