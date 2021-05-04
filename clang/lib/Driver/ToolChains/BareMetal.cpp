@@ -5,6 +5,10 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+//
+// Modified at the University of Rochester for the Silhouette Project.
+//
+//===----------------------------------------------------------------------===//
 
 #include "BareMetal.h"
 
@@ -156,8 +160,10 @@ void BareMetal::AddCXXStdlibLibArgs(const ArgList &Args,
 
 void BareMetal::AddLinkRuntimeLib(const ArgList &Args,
                                   ArgStringList &CmdArgs) const {
+#if 0
   CmdArgs.push_back(Args.MakeArgString("-lclang_rt.builtins-" +
                                        getTriple().getArchName() + ".a"));
+#endif
 }
 
 void baremetal::Linker::ConstructJob(Compilation &C, const JobAction &JA,
