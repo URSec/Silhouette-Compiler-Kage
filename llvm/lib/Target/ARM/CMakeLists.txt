@@ -52,6 +52,7 @@ add_llvm_target(ARMCodeGen
   ARMSilhouetteSFI.cpp
   ARMSilhouetteSTR2STRT.cpp
   ARMSilhouetteShadowStack.cpp
+  ARMKagePrivilegePromotion.cpp
   ARMSubtarget.cpp
   ARMTargetMachine.cpp
   ARMTargetObjectFile.cpp

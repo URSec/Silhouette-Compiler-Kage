@@ -19,6 +19,7 @@
 #include "ARMSilhouetteSFI.h"
 #include "ARMSilhouetteSTR2STRT.h"
 #include "ARMSilhouetteShadowStack.h"
+#include "ARMKagePrivilegePromotion.h"
 #include "MCTargetDesc/ARMMCTargetDesc.h"
 #include "TargetInfo/ARMTargetInfo.h"
 #include "llvm/ADT/Optional.h"
@@ -118,6 +119,13 @@ EnableSilhouetteSFI("enable-arm-silhouette-sfi",
                     cl::values(clEnumValN(NoSFI, "none", "No SFI"),
                                clEnumValN(SelSFI, "selective", "Selective SFI"),
                                clEnumValN(FullSFI, "full", "Full SFI")));
+
+bool KagePrivilegePromotion;
+static cl::opt<bool, true>
+EnableKagePrivilegePromotion("enable-arm-kage-privilege-promotion",
+                             cl::desc("Enable Kage privilege promotion pass"),
+                             cl::location(KagePrivilegePromotion),
+                             cl::init(false), cl::Hidden);
 
 // FIXME: Unify control over GlobalMerge.
 static cl::opt<cl::boolOrDefault>
@@ -586,6 +594,10 @@ void ARMPassConfig::addPreEmitPass() {
   addPass(createARMLowOverheadLoopsPass());
 
   // Add Silhouette passes.
+
+  if (EnableKagePrivilegePromotion) {
+    addPass(createARMKagePrivilegePromotion());
+  }
 
   if (EnableSilhouetteShadowStack) {
     addPass(createARMSilhouetteShadowStack());
