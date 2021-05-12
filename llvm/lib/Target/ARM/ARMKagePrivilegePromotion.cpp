@@ -45,7 +45,6 @@ ARMKagePrivilegePromotion::getPassName() const {
 //   MF - The transformed MachineFunction.
 //
 // Return value:
-//   true  - The MachineFunction was transformed.
 //   false - The MachineFunction was not transformed.
 //
 bool
