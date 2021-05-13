@@ -45,18 +45,19 @@ ARMSilhouetteLabelCFI::getPassName() const {
 }
 
 //
-// Function: BackupReister()
+// Function: BackupReisters()
 //
 // Description:
-//   This function inserts instructions that store the content of a lo register
-//   (R0 -- R7) onto the stack.
+//   This function inserts instructions that store the content of two LO
+//   registers (R0 -- R7) onto the stack.
 //
 // Inputs:
 //   MI   - A reference to the instruction before which to insert instructions.
-//   Reg1 - The register to spill.
+//   Reg  - The first register to spill.
+//   Reg2 - The second register to spill.
 //
 static void
-BackupRegister(MachineInstr & MI, unsigned Reg) {
+BackupRegisters(MachineInstr & MI, unsigned Reg, unsigned Reg2) {
   MachineBasicBlock & MBB = *MI.getParent();
   const TargetInstrInfo * TII = MBB.getParent()->getSubtarget().getInstrInfo();
 
@@ -64,49 +65,59 @@ BackupRegister(MachineInstr & MI, unsigned Reg) {
     // Build a PUSH
     BuildMI(MBB, &MI, DL, TII->get(ARM::tPUSH))
     .add(predOps(ARMCC::AL))
-    .addReg(Reg);
+    .addReg(Reg)
+    .addReg(Reg2);
   } else {
     //
     // Build the following instruction sequence:
     //
-    // sub  sp, #4
+    // sub  sp, #8
     // strt reg, [sp, #0]
+    // strt reg2, [sp, #4]
     //
     BuildMI(MBB, &MI, DL, TII->get(ARM::tSUBspi), ARM::SP)
     .addReg(ARM::SP)
-    .addImm(1)
+    .addImm(2)
     .add(predOps(ARMCC::AL));
     BuildMI(MBB, &MI, DL, TII->get(ARM::t2STRT))
     .addReg(Reg)
     .addReg(ARM::SP)
-    .addImm(0);
+    .addImm(0)
+    .add(predOps(ARMCC::AL));
+    BuildMI(MBB, &MI, DL, TII->get(ARM::t2STRT))
+    .addReg(Reg2)
+    .addReg(ARM::SP)
+    .addImm(4)
+    .add(predOps(ARMCC::AL));
   }
 }
 
 //
-// Function: RestoreRegister()
+// Function: RestoreRegisters()
 //
 // Description:
-//   This function inserts instructions that load the content of a lo register
-//   (R0 -- R7) from the stack.
+//   This function inserts instructions that load the content of two LO
+//   registers (R0 -- R7) from the stack.
 //
 // Inputs:
 //   MI   - A reference to the instruction before which to insert instructions.
-//   Reg - The register to restore.
+//   Reg  - The first register to restore.
+//   Reg2 - The second register to restore.
 //
 static void
-RestoreRegister(MachineInstr & MI, unsigned Reg) {
+RestoreRegisters(MachineInstr & MI, unsigned Reg, unsigned Reg2) {
   MachineBasicBlock & MBB = *MI.getParent();
   const TargetInstrInfo * TII = MBB.getParent()->getSubtarget().getInstrInfo();
 
   // Generate a POP that pops out the register content from stack
   BuildMI(MBB, &MI, DL, TII->get(ARM::tPOP))
   .add(predOps(ARMCC::AL))
-  .addReg(Reg);
+  .addReg(Reg)
+  .addReg(Reg2);
 }
 
 //
-// Method: insertCFILabelForCall()
+// Method: insertCFILabel()
 //
 // Description:
 //   This method inserts the CFI label for call before a machine function.
@@ -115,31 +126,19 @@ RestoreRegister(MachineInstr & MI, unsigned Reg) {
 //   MF - A reference to the machine function.
 //
 void
-ARMSilhouetteLabelCFI::insertCFILabelForCall(MachineFunction & MF) {
-  MachineBasicBlock & MBB = *MF.begin();
-  const TargetInstrInfo * TII = MF.getSubtarget().getInstrInfo();
+ARMSilhouetteLabelCFI::insertCFILabel(MachineFunction & MF) {
+  Function & F = const_cast<Function &>(MF.getFunction());
 
-  // Use "movs r3, r3" as our CFI label
-  BuildMI(MBB, MBB.begin(), DL, TII->get(ARM::tMOVSr), ARM::R3)
-  .addReg(ARM::R3);
-}
+  if (F.hasPrefixData()) {
+    errs() << "[CFI] Override existing prefix data of @" << F.getName() << "\n";
+  }
+  F.setPrefixData(ConstantInt::get(IntegerType::get(F.getContext(),
+                                                    CFI_LABEL_WIDTH),
+                                   CFI_LABEL));
 
-//
-// Method: insertCFILabelForJump()
-//
-// Description:
-//   This method inserts the CFI label for jump before a machine basic block.
-//
-// Input:
-//   MBB - A reference to a machine basic block.
-//
-void
-ARMSilhouetteLabelCFI::insertCFILabelForJump(MachineBasicBlock & MBB) {
-  const TargetInstrInfo * TII = MBB.getParent()->getSubtarget().getInstrInfo();
-
-  // Use "mov r0, r0" as our CFI label
-  BuildMI(MBB, MBB.begin(), DL, TII->get(ARM::tMOVr), ARM::R0)
-  .addReg(ARM::R0);
+  // Make sure the function is at least label-width aligned to avoid unaligned
+  // access when loading the label
+  MF.ensureAlignment(CFI_LABEL_WIDTH / 8);
 }
 
 //
@@ -153,11 +152,9 @@ ARMSilhouetteLabelCFI::insertCFILabelForJump(MachineBasicBlock & MBB) {
 //   MI    - A reference to the indirect forward control-flow transfer
 //           instruction.
 //   Reg   - The register used by @MI.
-//   Label - The correct label to check.
 //
 void
-ARMSilhouetteLabelCFI::insertCFICheck(MachineInstr & MI, unsigned Reg,
-                                      uint16_t Label) {
+ARMSilhouetteLabelCFI::insertCFICheck(MachineInstr & MI, unsigned Reg) {
   MachineBasicBlock & MBB = *MI.getParent();
   const TargetInstrInfo * TII = MBB.getParent()->getSubtarget().getInstrInfo();
 
@@ -166,100 +163,61 @@ ARMSilhouetteLabelCFI::insertCFICheck(MachineInstr & MI, unsigned Reg,
   // restore R4.
   //
   unsigned ScratchReg;
+  unsigned ScratchReg2;
   std::deque<unsigned> FreeRegs = findFreeRegisters(MI);
-  if (!FreeRegs.empty()) {
+  if (FreeRegs.size() >= 2) {
     ScratchReg = FreeRegs[0];
+    ScratchReg2 = FreeRegs[1];
   } else {
-    errs() << "[CFI] Unable to find a free register for " << MI;
-    ScratchReg = ARM::R4;
-    BackupRegister(MI, ScratchReg);
+    errs() << "[CFI] Unable to find free registers for " << MI;
+    ScratchReg = Reg == ARM::R4 ? ARM::R5 : ARM::R4;
+    ScratchReg2 = Reg == ARM::R6 ? ARM::R7 : ARM::R6;
+    BackupRegisters(MI, ScratchReg, ScratchReg2);
   }
 
   //
   // Build the following instruction sequence:
   //
-  // bfc   reg, #0, #1          ; optional
-  // ldrh  scratch, [reg, #0]
-  // cmp   scratch, #CFI_LABEL
+  // ldrh  scratch, [reg, #-4 or #-5]
+  // movw  scratch2, #CFL_LABEL:lo16
+  // movt  scratch2, #CFL_LABEL:hi16
+  // cmp   scratch, scratch2
   // it    ne
-  // bfcne reg, #0, #32
-  // orr   reg, reg, #1         ; optional
+  // orrne reg, reg, #0xffffffff
   //
 
-  //
-  // Clear the LSB of @Reg for instructions like BX and BLX; ARM uses the LSB
-  // to indicate an instruction set exchange between ARM and Thumb.
-  //
-  if (MI.getOpcode() != ARM::tBRIND) {
-    BuildMI(MBB, &MI, DL, TII->get(ARM::t2BFC), Reg)
-    .addReg(Reg)
-    .addImm(~0x1)
-    .add(predOps(ARMCC::AL));
-  }
   // Load the target CFI label to @ScratchReg
-  BuildMI(MBB, &MI, DL, TII->get(ARM::t2LDRHi12), ScratchReg)
+  BuildMI(MBB, &MI, DL, TII->get(ARM::t2LDRHi8), ScratchReg)
   .addReg(Reg)
-  .addImm(0);
-  // Compare the target label with the correct label
-  assert(ARM_AM::getT2SOImmVal(Label) != -1 && "Invalid value for T2SOImm!");
-  BuildMI(MBB, &MI, DL, TII->get(ARM::t2CMPri))
+  .addImm(MI.getOpcode() == ARM::tBRIND ? -4 : -5)
+  .add(predOps(ARMCC::AL));
+  // Load the correct CFI label to @ScratchReg2
+  BuildMI(MBB, &MI, DL, TII->get(ARM::t2MOVi16), ScratchReg)
+  .addImm(CFI_LABEL & 0xffff)
+  .add(predOps(ARMCC::AL));
+  BuildMI(MBB, &MI, DL, TII->get(ARM::t2MOVTi16), ScratchReg)
   .addReg(ScratchReg)
-  .addImm(Label);
-  // Clear all the bits of @Reg if two labels are not equal (a CFI violation)
+  .addImm(CFI_LABEL >> 16)
+  .add(predOps(ARMCC::AL));
+  // Compare the target label with the correct label
+  BuildMI(MBB, &MI, DL, TII->get(ARM::t2CMPrr))
+  .addReg(ScratchReg)
+  .addReg(ScratchReg2)
+  .add(predOps(ARMCC::AL));
+  // Set all the bits of @Reg if two labels are not equal (a CFI violation)
   BuildMI(MBB, &MI, DL, TII->get(ARM::t2IT))
   .addImm(ARMCC::NE)
   .addImm(0x8);
-  BuildMI(MBB, &MI, DL, TII->get(ARM::t2BFC), Reg)
+  BuildMI(MBB, &MI, DL, TII->get(ARM::t2ORRri), Reg)
   .addReg(Reg)
-  .addImm(0)
-  .addImm(ARMCC::NE).addReg(ARM::CPSR, RegState::Kill);
-  // Set the LSB of @Reg for instructions like BX and BLX
-  if (MI.getOpcode() != ARM::tBRIND) {
-    BuildMI(MBB, &MI, DL, TII->get(ARM::t2ORRri), Reg)
-    .addReg(Reg)
-    .addImm(0x1)
-    .add(predOps(ARMCC::AL))
-    .add(condCodeOp());
-  }
+  .addImm(0xffffffff)
+  .add(predOps(ARMCC::NE, ARM::CPSR))
+  .add(condCodeOp());
 
   // Restore the scratch register if we spilled it
-  if (FreeRegs.empty()) {
-    RestoreRegister(MI, ScratchReg);
+  if (FreeRegs.size() < 2) {
+    RestoreRegisters(MI, ScratchReg, ScratchReg2);
   }
-}
-
-//
-// Method: insertCFICheckForCall()
-//
-// Description:
-//   This method inserts a CFI check before a specified indirect call
-//   instruction that calls a target function in a register.
-//
-// Inputs:
-//   MI    - A reference to the indirect call instruction.
-//   Reg   - The register used by @MI.
-//   Label - The correct label to check.
-//
-void
-ARMSilhouetteLabelCFI::insertCFICheckForCall(MachineInstr & MI, unsigned Reg) {
-  insertCFICheck(MI, Reg, CFI_LABEL_CALL);
-}
-
-//
-// Method: insertCFICheckForJump()
-//
-// Description:
-//   This method inserts a CFI check before a specified indirect jump
-//   instruction that jumps to a target in a register.
-//
-// Inputs:
-//   MI    - A reference to the indirect jump instruction.
-//   Reg   - The register used by @MI.
-//   Label - The correct label to check.
-//
-void
-ARMSilhouetteLabelCFI::insertCFICheckForJump(MachineInstr & MI, unsigned Reg) {
-  insertCFICheck(MI, Reg, CFI_LABEL_JMP);
 }
 
 //
@@ -317,6 +275,8 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
       case ARM::tBRIND:     // 0: GPR, 1: predCC, 2: predReg
       case ARM::tBX:        // 0: GPR, 1: predCC, 2: predReg
       case ARM::tBXNS:      // 0: GPR, 1: predCC, 2: predReg
+        break;
+
       // Indirect call
       case ARM::tBLXr:      // 0: predCC, 1: predReg, 2: GPR
       case ARM::tBLXNSr:    // 0: predCC, 1: predReg, 2: GPRnopc
@@ -366,7 +326,7 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
   if ((!F.hasInternalLinkage() && !F.hasPrivateLinkage()) ||
       F.hasAddressTaken()) {
     if (MF.begin() != MF.end()) {
-      insertCFILabelForCall(MF);
+      insertCFILabel(MF);
     }
   }
 #else
@@ -382,23 +342,14 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
   //
   for (MachineInstr * MI : IndirectBranches) {
     switch (MI->getOpcode()) {
-    case ARM::tBRIND:     // 0: GPR, 1: predCC, 2: predReg
-    case ARM::tBX:        // 0: GPR, 1: predCC, 2: predReg
-    case ARM::tBXNS:      // 0: GPR, 1: predCC, 2: predReg
-      for (MachineBasicBlock * SuccMBB : MI->getParent()->successors()) {
-        insertCFILabelForJump(*SuccMBB);
-      }
-      insertCFICheckForJump(*MI, MI->getOperand(0).getReg());
-      break;
-
     case ARM::tBLXr:      // 0: predCC, 1: predReg, 2: GPR
     case ARM::tBLXNSr:    // 0: predCC, 1: predReg, 2: GPRnopc
-      insertCFICheckForCall(*MI, MI->getOperand(2).getReg());
+      insertCFICheck(*MI, MI->getOperand(2).getReg());
       break;
 
     case ARM::tBX_CALL:   // 0: tGPR
     case ARM::tTAILJMPr:  // 0: tcGPR
-      insertCFICheckForCall(*MI, MI->getOperand(0).getReg());
+      insertCFICheck(*MI, MI->getOperand(0).getReg());
       break;
 
     default:

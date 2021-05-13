@@ -25,10 +25,11 @@ namespace llvm {
     // pass identifier variable
     static char ID;
 
-    // The constant CFI label for indirect calls (encoding of "movs r3, r3")
-    static const uint16_t CFI_LABEL_CALL = 0x001b;
-    // The constant CFI label for indirect jumps (encoding of "mov r0, r0")
-    static const uint16_t CFI_LABEL_JMP = 0x4600;
+    // Number of bits of the constant CFI label
+    static const uint32_t CFI_LABEL_WIDTH = 32;
+
+    // The constant CFI label for indirect calls (an undefined encoding)
+    static const uint32_t CFI_LABEL = 0xf870f871;
 
     ARMSilhouetteLabelCFI();
 
@@ -37,11 +38,8 @@ namespace llvm {
     virtual bool runOnMachineFunction(MachineFunction & MF) override;
 
   private:
-    void insertCFILabelForCall(MachineFunction & MF);
-    void insertCFILabelForJump(MachineBasicBlock & MBB);
-    void insertCFICheckForCall(MachineInstr & MI, unsigned Reg);
-    void insertCFICheckForJump(MachineInstr & MI, unsigned Reg);
-    void insertCFICheck(MachineInstr & MI, unsigned Reg, uint16_t Label);
+    void insertCFILabel(MachineFunction & MF);
+    void insertCFICheck(MachineInstr & MI, unsigned Reg);
   };
 
   FunctionPass * createARMSilhouetteLabelCFI(void);
