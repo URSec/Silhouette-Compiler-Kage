@@ -95,14 +95,16 @@ backupRegisters(MachineInstr & MI, unsigned Reg1, unsigned Reg2,
       Insts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                       .addReg(Reg1)
                       .addReg(ARM::SP)
-                      .addImm(offset));
+                      .addImm(offset)
+                      .add(predOps(Pred, PredReg)));
       offset += 4;
     }
     if (Reg2 != ARM::NoRegister) {
       Insts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                       .addReg(Reg2)
                       .addReg(ARM::SP)
-                      .addImm(offset));
+                      .addImm(offset)
+                      .add(predOps(Pred, PredReg)));
       offset += 4;
     }
   }
@@ -216,12 +218,14 @@ handleSPWithUncommonImm(MachineInstr & MI, unsigned SrcReg, int64_t Imm,
   Insts.push_back(BuildMI(MF, DL, TII->get(strOpc))
                   .addReg(SrcReg)
                   .addReg(ScratchReg)
-                  .addImm(0));
+                  .addImm(0)
+                  .add(predOps(Pred, PredReg)));
   if (SrcReg2 != ARM::NoRegister) {
     Insts.push_back(BuildMI(MF, DL, TII->get(strOpc))
                     .addReg(SrcReg2)
                     .addReg(ScratchReg)
-                    .addImm(4));
+                    .addImm(4)
+                    .add(predOps(Pred, PredReg)));
   }
 
   if (needSpill) {
@@ -307,7 +311,8 @@ handleSPWithOffsetReg(MachineInstr & MI, unsigned SrcReg, unsigned OffsetReg,
   Insts.push_back(BuildMI(MF, DL, TII->get(strOpc))
                   .addReg(SrcReg)
                   .addReg(ScratchReg)
-                  .addImm(0));
+                  .addImm(0)
+                  .add(predOps(Pred, PredReg)));
 
   // Restore the scratch register from the stack if we spilled it
   if (needSpill) {
@@ -473,7 +478,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm));
+                         .addImm(Imm)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.158 Encoding T2: STR<c> <Rt>,[SP,#<imm8>]
@@ -491,7 +497,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm));
+                         .addImm(Imm)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.158 Encoding T3: STR<c>.W <Rt>,[<Rn>,#<imm12>]
@@ -512,7 +519,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm > 255 ? 0 : Imm));
+                         .addImm(Imm > 255 ? 0 : Imm)
+                         .add(predOps(Pred, PredReg)));
       if (Imm > 255) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -539,7 +547,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       if (Imm != -256) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -558,7 +567,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm));
+                         .addImm(Imm)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.167 Encoding T2: STRH<c>.W <Rt>,[<Rn>,#<imm12>]
@@ -581,7 +591,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm > 255 ? 0 : Imm));
+                         .addImm(Imm > 255 ? 0 : Imm)
+                         .add(predOps(Pred, PredReg)));
       if (Imm > 255) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -608,7 +619,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       if (Imm != -256) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -627,7 +639,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm));
+                         .addImm(Imm)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.160 Encoding T2: STRB<c>.W <Rt>,[<Rn>,#<imm12>]
@@ -648,7 +661,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm > 255 ? 0 : Imm));
+                         .addImm(Imm > 255 ? 0 : Imm)
+                         .add(predOps(Pred, PredReg)));
       if (Imm > 255) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -675,7 +689,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       if (Imm != -256) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -705,7 +720,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.158 Encoding T4: STR<c> <Rt>,[<Rn>],#+/-<imm8>
@@ -717,7 +733,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       addImmediateToRegister(MI, BaseReg, Imm, NewInsts);
       break;
 
@@ -742,7 +759,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.167 Encoding T3: STRH<c> <Rt>,[<Rn>],#+/-<imm8>
@@ -754,7 +772,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       addImmediateToRegister(MI, BaseReg, Imm, NewInsts);
       break;
 
@@ -779,7 +798,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.160 Encoding T3: STRB<c> <Rt>,[<Rn>],#+/-<imm8>
@@ -791,7 +811,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       addImmediateToRegister(MI, BaseReg, Imm, NewInsts);
       break;
 
@@ -819,7 +840,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2SUBrr), BaseReg)
                          .addReg(BaseReg)
                          .addReg(OffsetReg)
@@ -850,7 +872,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2SUBrs), BaseReg)
                          .addReg(BaseReg)
                          .addReg(OffsetReg)
@@ -883,7 +906,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2SUBrr), BaseReg)
                          .addReg(BaseReg)
                          .addReg(OffsetReg)
@@ -914,7 +938,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRHT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2SUBrs), BaseReg)
                          .addReg(BaseReg)
                          .addReg(OffsetReg)
@@ -947,7 +972,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2SUBrr), BaseReg)
                          .addReg(BaseReg)
                          .addReg(OffsetReg)
@@ -978,7 +1004,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRBT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2SUBrs), BaseReg)
                          .addReg(BaseReg)
                          .addReg(OffsetReg)
@@ -1014,11 +1041,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(Imm2));
+                         .addImm(Imm2)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg2)
                          .addReg(BaseReg)
-                         .addImm(Imm2 + 4));
+                         .addImm(Imm2 + 4)
+                         .add(predOps(Pred, PredReg)));
       if (Imm < 0 || Imm > 251) {
         subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
       }
@@ -1046,11 +1075,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg2)
                          .addReg(BaseReg)
-                         .addImm(4));
+                         .addImm(4)
+                         .add(predOps(Pred, PredReg)));
       break;
 
     // A7.7.163 Encoding T1: STRD<c> <Rt>,<Rt2>,[<Rn>],#+/-<imm8>
@@ -1063,11 +1094,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg)
                          .addReg(BaseReg)
-                         .addImm(0));
+                         .addImm(0)
+                         .add(predOps(Pred, PredReg)));
       NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                          .addReg(SrcReg2)
                          .addReg(BaseReg)
-                         .addImm(4));
+                         .addImm(4)
+                         .add(predOps(Pred, PredReg)));
       addImmediateToRegister(MI, BaseReg, Imm, NewInsts);
       break;
 
@@ -1126,11 +1159,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm2));
+                           .addImm(Imm2)
+                           .add(predOps(Pred, PredReg)));
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg2)
                            .addReg(BaseReg)
-                           .addImm(Imm2 + 4));
+                           .addImm(Imm2 + 4)
+                           .add(predOps(Pred, PredReg)));
         if (Imm < 0 || Imm > 251) {
           subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
         }
@@ -1187,7 +1222,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm2));
+                           .addImm(Imm2)
+                           .add(predOps(Pred, PredReg)));
         if (Imm < 0 || Imm > 255) {
           subtractImmediateFromRegister(MI, BaseReg, Imm, NewInsts);
         }
@@ -1218,7 +1254,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(RegList[i])
                            .addReg(BaseReg)
-                           .addImm(i * 4));
+                           .addImm(i * 4)
+                           .add(predOps(Pred, PredReg)));
       }
       // Increment the base register
       addImmediateToRegister(MI, BaseReg, RegList.size() * 4, NewInsts);
@@ -1238,7 +1275,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(RegList[i])
                            .addReg(BaseReg)
-                           .addImm(i * 4));
+                           .addImm(i * 4)
+                           .add(predOps(Pred, PredReg)));
       }
       break;
 
@@ -1258,7 +1296,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(RegList[i])
                            .addReg(BaseReg)
-                           .addImm(i * 4));
+                           .addImm(i * 4)
+                           .add(predOps(Pred, PredReg)));
       }
       // Restore the incremented base register
       addImmediateToRegister(MI, BaseReg, RegList.size() * 4, NewInsts);
@@ -1280,7 +1319,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(RegList[i])
                            .addReg(BaseReg)
-                           .addImm(i * 4));
+                           .addImm(i * 4)
+                           .add(predOps(Pred, PredReg)));
       }
       break;
 
@@ -1308,7 +1348,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(RegList[i])
                            .addReg(BaseReg)
-                           .addImm(i * 4));
+                           .addImm(i * 4)
+                           .add(predOps(Pred, PredReg)));
       }
       break;
 
@@ -1358,11 +1399,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm));
+                           .addImm(Imm)
+                           .add(predOps(Pred, PredReg)));
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg2)
                            .addReg(BaseReg)
-                           .addImm(Imm + 4));
+                           .addImm(Imm + 4)
+                           .add(predOps(Pred, PredReg)));
       }
       if (FreeRegs.size() < 2) {
         // Restore scratch registers from the stack
@@ -1412,11 +1455,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm));
+                           .addImm(Imm)
+                           .add(predOps(Pred, PredReg)));
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg2)
                            .addReg(BaseReg)
-                           .addImm(Imm + 4));
+                           .addImm(Imm + 4)
+                           .add(predOps(Pred, PredReg)));
       }
       if (FreeRegs.size() < 2) {
         // Restore scratch registers from the stack
@@ -1470,11 +1515,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm));
+                           .addImm(Imm)
+                           .add(predOps(Pred, PredReg)));
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg2)
                            .addReg(BaseReg)
-                           .addImm(Imm + 4));
+                           .addImm(Imm + 4)
+                           .add(predOps(Pred, PredReg)));
       }
       if (FreeRegs.size() < 2) {
         // Restore scratch registers from the stack
@@ -1520,7 +1567,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm));
+                           .addImm(Imm)
+                           .add(predOps(Pred, PredReg)));
       }
       if (FreeRegs.empty()) {
         // Restore the scratch register from the stack
@@ -1566,7 +1614,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm));
+                           .addImm(Imm)
+                           .add(predOps(Pred, PredReg)));
       }
       if (FreeRegs.empty()) {
         // Restore the scratch register from the stack
@@ -1616,7 +1665,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         NewInsts.push_back(BuildMI(MF, DL, TII->get(ARM::t2STRT))
                            .addReg(ScratchReg)
                            .addReg(BaseReg)
-                           .addImm(Imm));
+                           .addImm(Imm)
+                           .add(predOps(Pred, PredReg)));
       }
       if (FreeRegs.empty()) {
         // Restore the scratch register from the stack
