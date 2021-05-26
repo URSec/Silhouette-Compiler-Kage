@@ -619,7 +619,10 @@ else ()
       # For ARM archs, exclude any VFP builtins if VFP is not supported
       if (${arch} MATCHES "^(arm|armhf|armv7|armv7s|armv7k|armv7m|armv7em)$")
         string(REPLACE ";" " " _TARGET_${arch}_CFLAGS "${TARGET_${arch}_CFLAGS}")
-        check_compile_definition(__ARM_FP "${CMAKE_C_FLAGS} ${_TARGET_${arch}_CFLAGS}" COMPILER_RT_HAS_${arch}_VFP)
+        check_c_source_compiles("#ifndef __ARM_FP
+                                 #error No VFP support!
+                                 #endif
+                                 int main() { return 0; }" COMPILER_RT_HAS_${arch}_VFP)
         if(NOT COMPILER_RT_HAS_${arch}_VFP)
           list(REMOVE_ITEM ${arch}_SOURCES ${arm_Thumb1_VFPv2_DP_SOURCES} ${arm_Thumb1_VFPv2_SP_SOURCES} ${arm_Thumb1_SjLj_EH_SOURCES})
         else()
