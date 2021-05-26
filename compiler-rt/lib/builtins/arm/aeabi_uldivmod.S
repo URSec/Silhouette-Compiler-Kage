@@ -22,7 +22,14 @@
         .syntax unified
         .p2align 2
 DEFINE_COMPILERRT_FUNCTION(__aeabi_uldivmod)
+#ifdef SILHOUETTE
+        str     lr, [sp, #4092]
+        sub     sp, #8
+        strt    r6, [sp]
+        strt    lr, [sp, #4]
+#else
         push	{r6, lr}
+#endif
         sub	sp, sp, #16
         add	r6, sp, #8
         str	r6, [sp]
@@ -38,7 +45,13 @@ DEFINE_COMPILERRT_FUNCTION(__aeabi_uldivmod)
         ldr	r2, [sp, #8]
         ldr	r3, [sp, #12]
         add	sp, sp, #16
+#ifdef SILHOUETTE
+        pop     {r6}
+        add     sp, #4
+        ldr     pc, [sp, #4092]
+#else
         pop	{r6, pc}
+#endif
 END_COMPILERRT_FUNCTION(__aeabi_uldivmod)
 
 NO_EXEC_STACK_DIRECTIVE
