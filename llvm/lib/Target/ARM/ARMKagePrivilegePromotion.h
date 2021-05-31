@@ -13,12 +13,12 @@
 //===----------------------------------------------------------------------===//
 //
 
-#include "ARMSilhouetteInstrumentor.h"
-#include "llvm/CodeGen/MachineFunctionPass.h"
+#include "llvm/IR/Function.h"
+#include "llvm/Pass.h"
 
 namespace llvm {
 
-  struct ARMKagePrivilegePromotion : public MachineFunctionPass {
+  struct ARMKagePrivilegePromotion : public FunctionPass {
     // pass identifier variable
     static char ID;
 
@@ -28,7 +28,7 @@ namespace llvm {
 
     virtual StringRef getPassName() const override;
 
-    virtual bool runOnMachineFunction(MachineFunction & MF) override;
+    virtual bool runOnFunction(Function & F) override;
   };
 
   FunctionPass * createARMKagePrivilegePromotion(void);

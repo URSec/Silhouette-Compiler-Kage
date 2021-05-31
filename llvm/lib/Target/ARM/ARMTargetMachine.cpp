@@ -481,6 +481,9 @@ void ARMPassConfig::addIRPasses() {
   if (EnableSilhouetteCFI) {
     addPass(createIndirectBrExpandPass());
   }
+  if (EnableKagePrivilegePromotion) {
+    addPass(createARMKagePrivilegePromotion());
+  }
 }
 
 void ARMPassConfig::addCodeGenPrepare() {
@@ -594,10 +597,6 @@ void ARMPassConfig::addPreEmitPass() {
   addPass(createARMLowOverheadLoopsPass());
 
   // Add Silhouette passes.
-
-  if (EnableKagePrivilegePromotion) {
-    addPass(createARMKagePrivilegePromotion());
-  }
 
   if (EnableSilhouetteShadowStack) {
     addPass(createARMSilhouetteShadowStack());

@@ -19,8 +19,7 @@ using namespace llvm;
 
 char ARMKagePrivilegePromotion::ID = 0;
 
-ARMKagePrivilegePromotion::ARMKagePrivilegePromotion()
-    : MachineFunctionPass(ID) {
+ARMKagePrivilegePromotion::ARMKagePrivilegePromotion() : FunctionPass(ID) {
   return;
 }
 
@@ -30,32 +29,30 @@ ARMKagePrivilegePromotion::getPassName() const {
 }
 
 //
-// Method: runOnMachineFunction()
+// Method: runOnFunction()
 //
 // Description:
 //   This method is called when the PassManager wants this pass to transform
-//   the specified MachineFunction.  This method moves a function to a
+//   the specified Function.  This method moves a function to a
 //   privileged code section unless the function already has a section
 //   specified.
 //
 // Inputs:
-//   MF - A reference to the MachineFunction to transform.
+//   F - A reference to the Function to transform.
 //
 // Outputs:
-//   MF - The transformed MachineFunction.
+//   F - The transformed Function.
 //
 // Return value:
-//   false - The MachineFunction was not transformed.
+//   true - The Function was transformed.
 //
 bool
-ARMKagePrivilegePromotion::runOnMachineFunction(MachineFunction & MF) {
-  Function & F = const_cast<Function &>(MF.getFunction());
-
-  if (MF.size() > 0 && !F.hasSection()) {
+ARMKagePrivilegePromotion::runOnFunction(Function & F) {
+  if (F.size() > 0 && (!F.hasSection() || F.getSection().startswith(".text"))) {
     F.setSection(PrivilegedSectionName);
   }
 
-  return false;
+  return true;
 }
 
 //
