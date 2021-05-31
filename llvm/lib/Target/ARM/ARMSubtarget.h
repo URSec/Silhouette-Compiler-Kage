@@ -478,6 +478,9 @@ protected:
   /// IsLittle - The target is Little Endian
   bool IsLittle;
 
+  /// Privileged - Whether generating privileged code
+  bool Privileged = false;
+
   /// TargetTriple - What processor and OS we're targeting.
   Triple TargetTriple;
 
@@ -498,7 +501,7 @@ public:
   ///
   ARMSubtarget(const Triple &TT, const std::string &CPU, const std::string &FS,
                const ARMBaseTargetMachine &TM, bool IsLittle,
-               bool MinSize = false);
+               bool MinSize = false, bool Privileged = false);
 
   /// getMaxInlineSizeThreshold - Returns the maximum memset / memcpy size
   /// that still makes it profitable to inline the call.
@@ -755,6 +758,7 @@ public:
   bool isRClass() const { return ARMProcClass == RClass; }
   bool isAClass() const { return ARMProcClass == AClass; }
   bool isReadTPHard() const { return ReadTPHard; }
+  bool isPrivileged() const { return Privileged; }
 
   bool isR9Reserved() const {
     return isTargetMachO() ? (ReserveR9 || !HasV6Ops) : ReserveR9;

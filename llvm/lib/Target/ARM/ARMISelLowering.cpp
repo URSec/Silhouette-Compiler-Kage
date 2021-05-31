@@ -15887,3 +15887,19 @@ void ARMTargetLowering::finalizeLowering(MachineFunction &MF) const {
   MF.getFrameInfo().computeMaxCallFrameSize(MF);
   TargetLoweringBase::finalizeLowering(MF);
 }
+
+void ARMTargetLowering::setLibcallName(RTLIB::Libcall Call, const char *Name) {
+  if (Name) {
+    LibcallRoutineNamesPriv[Call] = std::string(Name) + "Priv";
+  } else {
+    LibcallRoutineNamesPriv[Call] = "";
+  }
+  TargetLowering::setLibcallName(Call, Name);
+}
+
+const char *ARMTargetLowering::getLibcallName(RTLIB::Libcall Call) const {
+  if (Subtarget->isPrivileged() && !LibcallRoutineNamesPriv[Call].empty()) {
+    return LibcallRoutineNamesPriv[Call].c_str();
+  }
+  return TargetLowering::getLibcallName(Call);
+}

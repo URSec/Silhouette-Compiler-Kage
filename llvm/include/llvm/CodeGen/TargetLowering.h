@@ -2560,12 +2560,12 @@ public:
   //
 
   /// Rename the default libcall routine name for the specified libcall.
-  void setLibcallName(RTLIB::Libcall Call, const char *Name) {
+  virtual void setLibcallName(RTLIB::Libcall Call, const char *Name) {
     LibcallRoutineNames[Call] = Name;
   }
 
   /// Get the libcall routine name for the specified libcall.
-  const char *getLibcallName(RTLIB::Libcall Call) const {
+  virtual const char *getLibcallName(RTLIB::Libcall Call) const {
     return LibcallRoutineNames[Call];
   }
 

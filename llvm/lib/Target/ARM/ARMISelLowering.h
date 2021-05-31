@@ -619,6 +619,10 @@ class VectorType;
 
     bool preferIncOfAddToSubOfNot(EVT VT) const override;
 
+    virtual void setLibcallName(RTLIB::Libcall Call, const char *Name) override;
+
+    virtual const char *getLibcallName(RTLIB::Libcall Call) const override;
+
   protected:
     std::pair<const TargetRegisterClass *, uint8_t>
     findRepresentativeClass(const TargetRegisterInfo *TRI,
@@ -641,6 +645,9 @@ class VectorType;
     bool InsertFencesForAtomic;
 
     bool HasStandaloneRem = true;
+
+    /// Stores the name for each privileged libcall.
+    std::string LibcallRoutineNamesPriv[RTLIB::UNKNOWN_LIBCALL + 1];
 
     void addTypeForNEON(MVT VT, MVT PromotedLdStVT, MVT PromotedBitwiseVT);
     void addDRTypeForNEON(MVT VT);
