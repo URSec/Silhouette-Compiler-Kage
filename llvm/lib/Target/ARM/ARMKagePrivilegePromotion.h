@@ -22,7 +22,7 @@ namespace llvm {
     // pass identifier variable
     static char ID;
 
-    const StringRef PrivilegedSectionName = "privileged_functions";
+    static constexpr char const * PrivilegedSectionName = "privileged_functions";
 
     ARMKagePrivilegePromotion();
 
