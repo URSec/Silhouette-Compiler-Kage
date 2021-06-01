@@ -335,7 +335,7 @@ ARMBaseTargetMachine::getSubtargetImpl(const Function &F) const {
     Key += "+minsize";
 
   bool Privileged = F.hasSection() &&
-                    F.getSection() == ARMKagePrivilegePromotion::PrivilegedCodeSectionName;
+                    F.getSection().startswith(ARMKagePrivilegePromotion::PrivilegedCodeSectionName);
   if (Privileged) {
     Key += ",priv";
   }
