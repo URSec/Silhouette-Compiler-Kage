@@ -335,7 +335,7 @@ ARMBaseTargetMachine::getSubtargetImpl(const Function &F) const {
     Key += "+minsize";
 
   bool Privileged = F.hasSection() &&
-                    F.getSection() == ARMKagePrivilegePromotion::PrivilegedSectionName;
+                    F.getSection() == ARMKagePrivilegePromotion::PrivilegedCodeSectionName;
   if (Privileged) {
     Key += ",priv";
   }
@@ -487,9 +487,7 @@ void ARMPassConfig::addIRPasses() {
   if (EnableSilhouetteCFI) {
     addPass(createIndirectBrExpandPass());
   }
-  if (EnableKagePrivilegePromotion) {
-    addPass(createARMKagePrivilegePromotion());
-  }
+  addPass(createARMKagePrivilegePromotion());
 }
 
 void ARMPassConfig::addCodeGenPrepare() {

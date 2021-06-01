@@ -245,7 +245,7 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
     return false;
   }
   // Skip privileged functions in FreeRTOS
-  if (MF.getFunction().getSection().equals("privileged_functions")){
+  if (MF.getFunction().getSection().startswith("privileged_functions")){
     errs() << "Privileged function: " << MF.getName() << "\n";
     return false;
   }

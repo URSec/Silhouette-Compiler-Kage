@@ -13,23 +13,24 @@
 //===----------------------------------------------------------------------===//
 //
 
-#include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 
 namespace llvm {
 
-  struct ARMKagePrivilegePromotion : public FunctionPass {
+  struct ARMKagePrivilegePromotion : public ModulePass {
     // pass identifier variable
     static char ID;
 
-    static constexpr char const * PrivilegedSectionName = "privileged_functions";
+    static constexpr char const * PrivilegedCodeSectionName = "privileged_functions";
+    static constexpr char const * PrivilegedDataSectionName = "privileged_data";
 
     ARMKagePrivilegePromotion();
 
     virtual StringRef getPassName() const override;
 
-    virtual bool runOnFunction(Function & F) override;
+    virtual bool runOnModule(Module & M) override;
   };
 
-  FunctionPass * createARMKagePrivilegePromotion(void);
+  ModulePass * createARMKagePrivilegePromotion(void);
 }
