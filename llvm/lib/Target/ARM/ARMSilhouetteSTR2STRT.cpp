@@ -14,7 +14,6 @@
 //
 
 #include "ARM.h"
-#include "ARMSilhouetteConvertFuncList.h"
 #include "ARMSilhouetteSFI.h"
 #include "ARMSilhouetteSTR2STRT.h"
 #include "ARMTargetMachine.h"
@@ -341,29 +340,13 @@ handleSPWithOffsetReg(MachineInstr & MI, unsigned SrcReg, unsigned OffsetReg,
 bool
 ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
 #if 1
-  // Skip certain functions
-  if (funcBlacklist.find(MF.getName()) != funcBlacklist.end()) {
-    return false;
-  }
   // Skip privileged functions in FreeRTOS
-  if (MF.getFunction().getSection().startswith("privileged_functions")){
-    errs() << "Privileged function: " << MF.getName() << "\n";
+  if (MF.getFunction().getSection().startswith("privileged_functions")) {
     return false;
   }
-
-  // Skip all HAL Library functions in FreeRTOS
-  if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("stm32l475_discovery") != std::string::npos){
-    if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("mcu_vendor") != std::string::npos){
-      errs() << "HAL Library Function: " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << " \n";
-      return false;
-    }
-  }
-  errs() << "Transforming " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << "\r\n";
 #endif
 
   const TargetInstrInfo * TII = MF.getSubtarget().getInstrInfo();
-
-  unsigned long OldCodeSize = getFunctionCodeSize(MF);
 
   // Iterate over all machine instructions to find stores
   std::deque<MachineInstr *> Stores;
@@ -1679,14 +1662,6 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       removeInst(MI);
     }
   }
-
-  unsigned long NewCodeSize = getFunctionCodeSize(MF);
-
-  // Output code size information
-  std::error_code EC;
-  raw_fd_ostream MemStat("./code_size_sp.stat", EC,
-                         sys::fs::OpenFlags::F_Append);
-  MemStat << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << ":" << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
 
   return true;
 }

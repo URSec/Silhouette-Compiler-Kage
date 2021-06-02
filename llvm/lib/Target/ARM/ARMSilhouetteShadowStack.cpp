@@ -15,7 +15,6 @@
 
 #include "ARM.h"
 #include "ARMBaseInstrInfo.h"
-#include "ARMSilhouetteConvertFuncList.h"
 #include "ARMSilhouetteShadowStack.h"
 #include "ARMTargetMachine.h"
 #include "llvm/CodeGen/MachineFunction.h"
@@ -281,42 +280,10 @@ ARMSilhouetteShadowStack::popFromShadowStack(MachineInstr & MI,
 bool
 ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
 #if 1
-  // Skip certain functions
-  if (funcBlacklist.find(MF.getName()) != funcBlacklist.end()) {
-    // Output code size information
-    std::error_code EC;
-    raw_fd_ostream MemStat("./code_size_bklist.stat", EC,
-                          sys::fs::OpenFlags::F_Append);
-    MemStat << MF.getName() << ":" << getFunctionCodeSize(MF) << "\n";
-
-    return false;
-  }
   // Skip privileged functions in FreeRTOS
-  if (MF.getFunction().getSection().startswith("privileged_functions")){
-    errs() << "Privileged function: " << MF.getName() << "\n";
-    // Output code size information
-    std::error_code EC;
-    raw_fd_ostream MemStat("./code_size_priv.stat", EC,
-                          sys::fs::OpenFlags::F_Append);
-    MemStat << MF.getName() << ":" << getFunctionCodeSize(MF) << "\n";
-
+  if (MF.getFunction().getSection().startswith("privileged_functions")) {
     return false;
   }
-
-  // Skip all HAL Library functions in FreeRTOS
-  if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("stm32l475_discovery") != std::string::npos){
-    if (MF.getFunction().getEntryBlock().getModule()->getSourceFileName().find("mcu_vendor") != std::string::npos){
-      errs() << "HAL Library Function: " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << " \n";
-      // Output code size information
-      std::error_code EC;
-      raw_fd_ostream MemStat("./code_size_hal.stat", EC,
-                            sys::fs::OpenFlags::F_Append);
-      MemStat << MF.getName() << ":" << getFunctionCodeSize(MF) << "\n";
-
-      return false;
-    }
-  }
-  errs() << "Transforming " << MF.getName() << " From " << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << "\r\n";
 #endif
 
   // Warn if the function has variable-sized objects; we assume the program is
@@ -326,8 +293,6 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
     errs() << "[SS] Variable-sized objects not promoted in "
            << MF.getName() << "\n";
   }
-
-  unsigned long OldCodeSize = getFunctionCodeSize(MF);
 
   for (MachineBasicBlock & MBB : MF) {
     for (MachineInstr & MI : MBB) {
@@ -381,14 +346,6 @@ ARMSilhouetteShadowStack::runOnMachineFunction(MachineFunction & MF) {
       }
     }
   }
-
-  unsigned long NewCodeSize = getFunctionCodeSize(MF);
-
-  // Output code size information
-  std::error_code EC;
-  raw_fd_ostream MemStat("./code_size_ss.stat", EC,
-                         sys::fs::OpenFlags::F_Append);
-  MemStat << MF.getFunction().getEntryBlock().getModule()->getSourceFileName() << ":" << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
 
   return true;
 }

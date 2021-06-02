@@ -14,7 +14,6 @@
 //
 
 #include "ARM.h"
-#include "ARMSilhouetteConvertFuncList.h"
 #include "ARMSilhouetteSFI.h"
 #include "ARMTargetMachine.h"
 #include "llvm/CodeGen/MachineFunction.h"
@@ -201,15 +200,13 @@ handleSPUncommonImmediate(MachineInstr & MI, unsigned SrcReg, int64_t Imm,
 bool
 ARMSilhouetteSFI::runOnMachineFunction(MachineFunction & MF) {
 #if 1
-  // Skip certain functions
-  if (funcBlacklist.find(MF.getName()) != funcBlacklist.end()) {
+  // Skip privileged functions in FreeRTOS
+  if (MF.getFunction().getSection().startswith("privileged_functions")) {
     return false;
   }
 #endif
 
   const TargetInstrInfo * TII = MF.getSubtarget().getInstrInfo();
-
-  unsigned long OldCodeSize = getFunctionCodeSize(MF);
 
   // Iterate over all machine instructions to find stores
   std::deque<MachineInstr *> Stores;
@@ -582,14 +579,6 @@ ARMSilhouetteSFI::runOnMachineFunction(MachineFunction & MF) {
       insertInstsAfter(MI, InstsAfter);
     }
   }
-
-  unsigned long NewCodeSize = getFunctionCodeSize(MF);
-
-  // Output code size information
-  std::error_code EC;
-  raw_fd_ostream MemStat("./code_size_sfi.stat", EC,
-                         sys::fs::OpenFlags::F_Append);
-  MemStat << MF.getName() << ":" << OldCodeSize << ":" << NewCodeSize << "\n";
 
   return true;
 }
