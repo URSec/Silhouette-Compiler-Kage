@@ -32,7 +32,11 @@ DEFINE_COMPILERRT_FUNCTION(__aeabi_uldivmod)
 #endif
         sub	sp, sp, #16
         add	r6, sp, #8
+#ifdef SILHOUETTE
+        strt    r6, [sp]
+#else
         str	r6, [sp]
+#endif
 #if defined(__MINGW32__)
         movs    r6, r0
         movs    r0, r2
