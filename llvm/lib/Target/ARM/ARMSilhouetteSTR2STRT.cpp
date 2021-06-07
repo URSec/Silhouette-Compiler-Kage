@@ -202,7 +202,8 @@ handleSPWithUncommonImm(MachineInstr & MI, unsigned SrcReg, int64_t Imm,
   }
 
   if (needSpill) {
-    errs() << "[SP] Unable to find a free register for SP in " << MI;
+    errs() << "[SP] Unable to find a free register in " << MF.getName()
+           << " for SP in " << MI;
     // Find a register to spill
     ScratchReg = ARM::R4;
     while (ScratchReg == SrcReg || ScratchReg == SrcReg2) ScratchReg++;
@@ -279,7 +280,8 @@ handleSPWithOffsetReg(MachineInstr & MI, unsigned SrcReg, unsigned OffsetReg,
   }
 
   if (needSpill) {
-    errs() << "[SP] Unable to find a free register for SP in " << MI;
+    errs() << "[SP] Unable to find a free register in " << MF.getName()
+           << " for SP in " << MI;
     // Save a scratch register onto the stack.
     ScratchReg = ARM::R0;
     while (ScratchReg == SrcReg || ScratchReg == OffsetReg) ScratchReg++;
@@ -424,6 +426,13 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         if (SilhouetteSFI == NoSFI) {
           Stores.push_back(&MI);
         }
+        break;
+
+      // Store Exclusive
+      // Handled by the SFI pass
+      case ARM::t2STREX:
+      case ARM::t2STREXB:
+      case ARM::t2STREXH:
         break;
 
       case ARM::INLINEASM:
@@ -1111,7 +1120,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         ScratchReg = FreeRegs[0];
         ScratchReg2 = FreeRegs[1];
       } else {
-        errs() << "[SP] Unable to find free registers for " << MI;
+        errs() << "[SP] Unable to find free registers in " << MF.getName()
+               << " for " << MI;
         // Saving 2 scratch registers onto the stack causes SP to decrement by
         // 8.  If the base register is SP, we compensate it by increasing the
         // immediate by the same amount.
@@ -1177,7 +1187,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       if (!FreeRegs.empty()) {
         ScratchReg = FreeRegs[0];
       } else {
-        errs() << "[SP] Unable to find a free register for " << MI;
+        errs() << "[SP] Unable to find a free register in " << MF.getName()
+               << " for " << MI;
         // Saving a scratch register onto the stack causes SP to decrement by
         // 4.  If the base register is SP, we compensate it by increasing the
         // immediate by the same amount.
@@ -1359,7 +1370,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         ScratchReg = FreeRegs[0];
         ScratchReg2 = FreeRegs[1];
       } else {
-        errs() << "[SP] Unable to find free registers for " << MI;
+        errs() << "[SP] Unable to find free registers in " << MF.getName()
+               << " for " << MI;
         // Pick 2 core registers as scratch registers, because STRT can only
         // encode core registers
         ScratchReg = BaseReg == ARM::R0 ? ARM::R1 : ARM::R0;
@@ -1414,7 +1426,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         ScratchReg = FreeRegs[0];
         ScratchReg2 = FreeRegs[1];
       } else {
-        errs() << "[SP] Unable to find free registers for " << MI;
+        errs() << "[SP] Unable to find free registers in " << MF.getName()
+               << " for " << MI;
         // Pick 2 core registers as scratch registers, because STRT can only
         // encode core registers
         ScratchReg = BaseReg == ARM::R0 ? ARM::R1 : ARM::R0;
@@ -1473,7 +1486,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
         ScratchReg = FreeRegs[0];
         ScratchReg2 = FreeRegs[1];
       } else {
-        errs() << "[SP] Unable to find free registers for " << MI;
+        errs() << "[SP] Unable to find free registers in " << MF.getName()
+               << " for " << MI;
         // Pick 2 core registers as scratch registers, because STRT can only
         // encode core registers
         ScratchReg = BaseReg == ARM::R0 ? ARM::R1 : ARM::R0;
@@ -1527,7 +1541,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       if (!FreeRegs.empty()) {
         ScratchReg = FreeRegs[0];
       } else {
-        errs() << "[SP] Unable to find a free register for " << MI;
+        errs() << "[SP] Unable to find a free register in " << MF.getName()
+               << " for " << MI;
         // Pick a core register as a scratch register, because STRT can only
         // encode core registers
         ScratchReg = BaseReg == ARM::R0 ? ARM::R1 : ARM::R0;
@@ -1574,7 +1589,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       if (!FreeRegs.empty()) {
         ScratchReg = FreeRegs[0];
       } else {
-        errs() << "[SP] Unable to find a free register for " << MI;
+        errs() << "[SP] Unable to find a free register in " << MF.getName()
+               << " for " << MI;
         // Pick a core register as a scratch register, because STRT can only
         // encode core registers
         ScratchReg = BaseReg == ARM::R0 ? ARM::R1 : ARM::R0;
@@ -1625,7 +1641,8 @@ ARMSilhouetteSTR2STRT::runOnMachineFunction(MachineFunction & MF) {
       if (!FreeRegs.empty()) {
         ScratchReg = FreeRegs[0];
       } else {
-        errs() << "[SP] Unable to find a free register for " << MI;
+        errs() << "[SP] Unable to find a free register in " << MF.getName()
+               << " for " << MI;
         // Pick a core register as a scratch register, because STRT can only
         // encode core registers
         ScratchReg = BaseReg == ARM::R0 ? ARM::R1 : ARM::R0;

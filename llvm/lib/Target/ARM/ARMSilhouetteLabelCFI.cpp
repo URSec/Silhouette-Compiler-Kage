@@ -294,7 +294,7 @@ ARMSilhouetteLabelCFI::runOnMachineFunction(MachineFunction & MF) {
 
       default:
         if (MI.isIndirectBranch() || MI.isCall()) {
-          errs() << "[CFI]: unidentified branch/call: " << MI;
+          errs() << "[CFI] Unidentified branch/call: " << MI;
         }
         break;
       }
